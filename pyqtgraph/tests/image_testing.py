@@ -22,9 +22,9 @@ Procedure for unit-testing with images:
         $ git add ...
         $ git commit -a
 
-4. Look up the most recent tag name from the `testDataTag` variable in
-   getTestDataRepo() below. Increment the tag name by 1 in the function
-   and create a new tag in the test-data repository:
+4. Look up the most recent tag name from the module level global variable,
+   `testDataTag`. Increment the tag name by 1 in the function and create a
+   new tag in the test-data repository:
 
         $ git tag test-data-NNN
         $ git push --tags origin master
@@ -34,9 +34,6 @@ Procedure for unit-testing with images:
     commits to the test-data repository without interfering with existing
     tests, and also allows unit tests to continue working on older pyqtgraph
     versions.
-
-    Finally, update the tag name in ``getTestDataRepo`` to the new name.
-
 """
 
 import time

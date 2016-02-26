@@ -375,7 +375,7 @@ def getTestDataRepo():
     out.
 
     If the repository does not exist, then it is cloned from
-    https://github.com/vispy/test-data. If the repository already exists
+    https://github.com/pyqtgraph/test-data. If the repository already exists
     then the required commit is checked out.
     """
     global testDataTag

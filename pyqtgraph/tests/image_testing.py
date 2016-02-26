@@ -380,7 +380,8 @@ def getTestDataRepo():
     """
     global testDataTag
 
-    dataPath = os.path.expanduser('~/.pyqtgraph/test-data')
+    dataPath = os.path.join(os.path.expanduser('~'),
+                            '.pyqtgraph', 'test-data')
     gitPath = 'https://github.com/pyqtgraph/test-data'
     gitbase = gitCmdBase(dataPath)
 

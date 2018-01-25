@@ -15,7 +15,7 @@ from .python2_3 import asUnicode, basestring
 from .Qt import QtGui, QtCore, USE_PYSIDE
 from . import getConfigOption, setConfigOptions
 from . import debug
-
+from .metaarray import MetaArray
 
 
 Colors = {
@@ -110,7 +110,7 @@ def siFormat(x, precision=3, suffix='', space=True, error=None, minVal=1e-25, al
         return fmt % (x*p, pref, suffix, plusminus, siFormat(error, precision=precision, suffix=suffix, space=space, minVal=minVal))
 
 
-def siParse(s, regex=FLOAT_REGEX):
+def siParse(s, regex=FLOAT_REGEX, suffix=None):
     """Convert a value written in SI notation to a tuple (number, si_prefix, suffix).
     
     Example::
@@ -118,6 +118,12 @@ def siParse(s, regex=FLOAT_REGEX):
         siParse('100 μV")  # returns ('100', 'μ', 'V')
     """
     s = asUnicode(s)
+    s = s.strip()
+    if suffix is not None and len(suffix) > 0:
+        if s[-len(suffix):] != suffix:
+            raise ValueError("String '%s' does not have the expected suffix '%s'" % (s, suffix))
+        s = s[:-len(suffix)] + 'X'  # add a fake suffix so the regex still picks up the si prefix
+        
     m = regex.match(s)
     if m is None:
         raise ValueError('Cannot parse number "%s"' % s)
@@ -126,15 +132,18 @@ def siParse(s, regex=FLOAT_REGEX):
     except IndexError:
         sip = ''
     
-    try:
-        suf = m.group('suffix')
-    except IndexError:
-        suf = ''
+    if suffix is None:
+        try:
+            suf = m.group('suffix')
+        except IndexError:
+            suf = ''
+    else:
+        suf = suffix
     
     return m.group('number'), '' if sip is None else sip, '' if suf is None else suf 
 
 
-def siEval(s, typ=float, regex=FLOAT_REGEX):
+def siEval(s, typ=float, regex=FLOAT_REGEX, suffix=None):
     """
     Convert a value written in SI notation to its equivalent prefixless value.
 
@@ -142,9 +151,9 @@ def siEval(s, typ=float, regex=FLOAT_REGEX):
     
         siEval("100 μV")  # returns 0.0001
     """
-    val, siprefix, suffix = siParse(s, regex)
+    val, siprefix, suffix = siParse(s, regex, suffix=suffix)
     v = typ(val)
-    return siApply(val, siprefix)
+    return siApply(v, siprefix)
 
     
 def siApply(val, siprefix):
@@ -417,7 +426,21 @@ def eq(a, b):
     """
     if a is b:
         return True
-        
+
+    # Avoid comparing large arrays against scalars; this is expensive and we know it should return False.
+    aIsArr = isinstance(a, (np.ndarray, MetaArray))
+    bIsArr = isinstance(b, (np.ndarray, MetaArray))
+    if (aIsArr or bIsArr) and type(a) != type(b):
+        return False
+
+    # If both inputs are arrays, we can speeed up comparison if shapes / dtypes don't match
+    # NOTE: arrays of dissimilar type should be considered unequal even if they are numerically
+    # equal because they may behave differently when computed on.
+    if aIsArr and bIsArr and (a.shape != b.shape or a.dtype != b.dtype):
+        return False
+
+    # Test for equivalence. 
+    # If the test raises a recognized exception, then return Falase
     try:
         try:
             # Sometimes running catch_warnings(module=np) generates AttributeError ???
@@ -733,26 +756,17 @@ def subArray(data, offset, shape, stride):
     the input in the example above to have shape (10, 7) would cause the
     output to have shape (2, 3, 7).
     """
-    #data = data.flatten()
-    data = data[offset:]
+    data = np.ascontiguousarray(data)[offset:]
     shape = tuple(shape)
-    stride = tuple(stride)
     extraShape = data.shape[1:]
-    #print data.shape, offset, shape, stride
-    for i in range(len(shape)):
-        mask = (slice(None),) * i + (slice(None, shape[i] * stride[i]),)
-        newShape = shape[:i+1]
-        if i < len(shape)-1:
-            newShape += (stride[i],)
-        newShape += extraShape 
-        #print i, mask, newShape
-        #print "start:\n", data.shape, data
-        data = data[mask]
-        #print "mask:\n", data.shape, data
-        data = data.reshape(newShape)
-        #print "reshape:\n", data.shape, data
+
+    strides = list(data.strides[::-1])
+    itemsize = strides[-1]
+    for s in stride[1::-1]:
+        strides.append(itemsize * s)
+    strides = tuple(strides[::-1])
     
-    return data
+    return np.ndarray(buffer=data, shape=shape+extraShape, strides=strides, dtype=data.dtype)
 
 
 def transformToArray(tr):

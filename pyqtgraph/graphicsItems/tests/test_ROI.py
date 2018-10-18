@@ -133,7 +133,7 @@ def check_getArrayRegion(roi, name, testResize=True, transpose=False):
     rgn = roi.getArrayRegion(data, img1, axes=(1, 2))
     img2.setImage(rgn[0, ..., 0])
     app.processEvents()
-    assertImageApproved(win, name+'/roi_getarrayregion_inverty', 'Simple ROI region selection, view inverted.')
+    assertImageApproved(win, name+'/roi_getarrayregion_inverty', 'Simple ROI region selection, view inverted.', pxCount=10)
 
     roi.setState(initState)
     img1.resetTransform()

@@ -154,17 +154,12 @@ def test_PolyLineROI():
         (pg.PolyLineROI([[0, 0], [10, 0], [0, 15]], closed=False, pen=0.3), 'open')
     ]
     
-    #plt = pg.plot()
     plt = pg.GraphicsView()
     plt.show()
     resizeWindow(plt, 200, 200)
     vb = pg.ViewBox()
     plt.scene().addItem(vb)
     vb.resize(200, 200)
-    #plt.plotItem = pg.PlotItem()
-    #plt.scene().addItem(plt.plotItem)
-    #plt.plotItem.resize(200, 200)
-    
 
     plt.scene().minDragTime = 0  # let us simulate mouse drags very quickly.
 
@@ -229,4 +224,4 @@ def test_PolyLineROI():
         assertImageApproved(plt, 'roi/polylineroi/'+name+'_setstate', 'Reset ROI to initial state.')
         assert len(r.getState()['points']) == 3
         
-    
+        r.hide()

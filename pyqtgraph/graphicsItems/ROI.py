@@ -830,7 +830,7 @@ class ROI(GraphicsObject):
         elif h['type'] == 'f':
             newPos = self.mapFromParent(p1)
             h['item'].setPos(newPos)
-            h['pos'] = newPos
+            h['pos'] = newPos / self.state['size']
             self.freeHandleMoved = True
             
         elif h['type'] == 's':
@@ -995,7 +995,6 @@ class ROI(GraphicsObject):
             ## Move all handles to match the current configuration of the ROI
             for h in self.handles:
                 if h['item'] in self.childItems():
-                    p = h['pos']
                     h['item'].setPos(h['pos'] * self.state['size'])
                     
             self.update()

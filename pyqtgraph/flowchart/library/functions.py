@@ -56,7 +56,9 @@ def applyFilter(data, b, a, padding=100, bidir=True):
     d1 = data.view(np.ndarray)
     
     if padding > 0:
-        d1 = np.hstack([d1[:padding], d1, d1[-padding:]])
+        pad1 = d1[:padding]
+        pad2 = d1[-padding:]
+        d1 = np.hstack([pad1, d1, pad2])
     
     if bidir:
         d1 = scipy.signal.lfilter(b, a, scipy.signal.lfilter(b, a, d1)[::-1])[::-1]
@@ -64,12 +66,13 @@ def applyFilter(data, b, a, padding=100, bidir=True):
         d1 = scipy.signal.lfilter(b, a, d1)
     
     if padding > 0:
-        d1 = d1[padding:-padding]
+        d1 = d1[len(pad1):-len(pad2)]
         
     if (hasattr(data, 'implements') and data.implements('MetaArray')):
         return MetaArray(d1, info=data.infoCopy())
     else:
         return d1
+
     
 def besselFilter(data, cutoff, order=1, dt=None, btype='low', bidir=True):
     """return data passed through bessel filter"""
